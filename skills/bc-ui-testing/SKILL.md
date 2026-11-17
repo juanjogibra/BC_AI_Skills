@@ -154,6 +154,15 @@ Regex útiles para `browser_find`:
 - Botones de acción: `/menuitem "Nuevo"|menuitem "Registrar"/`
 - Estado edición: `/Realizar cambios en la página|Abrir la página en modo de solo lectura/`
 
+**Power Apps (canvas) conectadas a BC (comprobado 17/11/2026)**:
+- Ir SIEMPRE al entorno de Power Platform que indica el usuario (el login deja en el entorno por defecto). Cambio de entorno: botón "Entorno" → lista lateral.
+- **Leer fórmulas**: Studio → menú desplegable junto a Guardar → "Descargar una copia" → el `.msapp` es un ZIP con `Src/*.pa.yaml` (todas las fórmulas legibles) y `References/DataSources.json` (conector, empresa). Mucho más fiable que leer la barra de fórmulas control a control. Sirve también como copia de seguridad antes de cambiar y para hacer `diff` y confirmar que el único cambio es el deseado.
+- **Editar una fórmula**: buscar el control en el árbol (cuadro "Buscar"), seleccionarlo, clic en la barra de fórmulas, `Ctrl+A` + `keyboard.insertText(...)` (en configuración española los separadores son `;`). Diálogos "Bienvenido"/"¿Sabía que…?" se tragan el texto: cerrarlos antes.
+- La barra del Studio cambia de posición según el ancho y el estado (botón "Publicar" con texto o solo icono): localizar botones por rol/nombre en el iframe `authoring...`, no por coordenadas fijas. Al pulsar Publicar el Studio guarda una versión aunque se cancele.
+- Studio en "solo lectura": otra sesión (también la propia anterior) tiene el bloqueo; se libera en unos minutos.
+- **Probar en la app publicada**: aparecen avisos "Se acerca una nueva versión" y "Está usando una versión anterior… [Actualizar]". Pulsar Actualizar por nombre (`getByRole('button',{name:'Actualizar'})`, su posición cambia si hay dos avisos) y comprobar que el aviso ya no está ANTES de dar por buena una prueba. La vista previa del Studio (▷) sirve para probar sin publicar, con los datos reales de ese entorno.
+- Capturar lo que la app pide a BC: `page.waitForResponse(r => r.url().includes('/tables/<entidad>/items'))` → ver si hay `$filter`, cuántas filas, Ids nulos/duplicados.
+
 ## 4. Seguridad de datos
 
 - Antes de registrar, lanzar, eliminar o enviar documentos, confirmar con el usuario salvo que lo haya pedido explícitamente.
