@@ -35,6 +35,8 @@ Revisarlos al leer el código (antes de ejecutar nada): detectarlos leyendo cues
 8. **"Find entries" primero**: dice qué tablas tienen movimientos; abrir solo esas.
 9. **Regresión proporcional**: un cambio visual no necesita regresión de registro; un cambio en el registro sí.
 10. **Preguntas agrupadas**: si falta información, pedirla toda de una vez al principio.
+11. **Límite de tiempo por obstáculo (regla del usuario)**: si un paso se resiste (2-3 intentos fallidos), preguntarse si merece la pena para el conocimiento. Si NO, saltar al siguiente apartado o tomar la vía simple (p. ej. crear datos propios en lugar de seguir investigando cuáles existen). Avisar al usuario en una línea.
+12. **Crear antes que descubrir** en datos de prueba: datos propios con prefijo reconocible (`QA-...`) son más rápidos y predecibles que buscar cuáles de la demo encajan.
 
 ## C. Revisión de incidencias eficiente
 1. **Triaje de una sola vez**: texto literal del error, entorno/empresa, usuario, nº de documento, desde cuándo pasa y qué cambió (instalación de extensión, configuración, datos).

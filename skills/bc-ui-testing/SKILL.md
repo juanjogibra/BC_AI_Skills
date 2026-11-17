@@ -30,6 +30,8 @@ Esta skill es la mecánica de la interfaz. Para validar un desarrollo o incidenc
 - `browser_file_upload` solo admite ficheros dentro del proyecto o del output-dir de Playwright. Un .app de Descargas no se puede subir directamente: pedir al usuario que lo deje en `{{USERPROFILE_FWD}}/bc-browser/playwright-output` (y borrarlo después).
 - Dependencias: una PTE solo puede depender de extensiones publicadas como PTE/AppSource; si la dependencia está publicada por dev, falla con "The app has dependencies missing ... Dependency that is missing". Instalar primero la dependencia como PTE (orden: dependencias → extensión).
 - No subir una versión inferior a la ya publicada en el entorno: comprobar antes en 2500 la versión de la extensión y de sus dependencias.
+- **Inicio de sesión / MFA** (comprobado 17/11/2026): cada tenant puede requerir una cuenta distinta; si Microsoft muestra una cuenta que no es (p. ej. la corporativa en un tenant personal), preguntar al usuario qué cuenta usar antes de insistir con códigos (el código "no previsto" suele ser de otra cuenta). Para MFA lo más fiable es reiniciar con `-Restart -Visible` y que el usuario complete el login en la ventana; la aprobación por notificación muestra un número que hay que comunicarle. Los códigos TOTP enviados por chat caducan por el camino. "Inicie sesión de otra forma" / "No puedo usar mi aplicación..." permite alternar entre notificación y código. Nunca guardar contraseñas en skills, memoria ni repositorio.
+- **Copiar empresa** (página 357 → "Copiar"): pide nombre y activar el conmutador "Lo entiendo" (`checkbox "Lo entiendo"`) antes de Aceptar; muestra "En proceso... Creando nueva empresa <X>" y bloquea la pestaña mientras copia.
 - Lista de entornos: Admin Center `https://businesscentral.dynamics.com/<tenantId>/admin` (tabla Name/Type). No tocar Production sin permiso explícito.
 - Al cambiar de entorno el cliente tarda ~15 s en cargar (pantalla "Business Central" en blanco): esperar antes de buscar controles. En headless puede salir "Hemos pausado mientras estaba fuera. Actualice para continuar." tras pulsar Implementar: el envío ya se ha hecho; verificar en 2508.
 
@@ -102,6 +104,17 @@ Al navegar desde una página con cambios o abierta, BC lanza un diálogo `before
 4. Rellenar: `browser_type` + `browser_press_key("Tab")` para disparar la validación. Para varios campos de cabecera, `browser_fill_form`.
 5. Verificar el resultado con un `browser_find` puntual (valor del campo, título de la página, diálogo de error).
 6. Narrar al usuario en una línea qué se va a hacer antes de cada paso visible, porque lo está viendo en directo.
+
+**Fragmentos de código listos para usar** (leer listas, crear fichas con plantilla, diario con lote y registro): `references/snippets.md`. Usarlos antes de improvisar: ahorran muchos intentos.
+
+**Lectura rápida de datos sin capturas (comprobado 17/11/2026)**: `browser_evaluate` sobre `document.querySelector('iframe').contentDocument` lee la cuadrícula: la PRIMERA `[role=grid]` es la lista principal (en tabla o en mosaico); las demás son paneles laterales que muestran "(No hay nada que mostrar en esta vista)" mientras cargan → no usar ese texto de todo el documento para decidir que está vacío. Esperar a que la primera cuadrícula no diga "Cargando/Recuperando". Con `browser_run_code_unsafe` se pueden recorrer varias páginas por URL en un solo paso (3-4 s por página).
+**Trampas al automatizar navegación**:
+- Salir de una **ficha** (card) o de una lista con un filtro de URL no válido dispara el diálogo `beforeunload`, que bloquea el script en curso y pierde su resultado → no mezclar fichas en recorridos en bloque; tras el aviso, `browser_handle_dialog(accept)`.
+- **No usar `<>` en filtros de URL** (`'Campo' IS '<>'''` falla). "No vacío" = `'?*'`.
+- Las herramientas del navegador lanzadas en paralelo en un mismo mensaje NO se ejecutan en orden: una captura puede salir antes que la espera. Encadenar en mensajes distintos o dentro de un `run_code`.
+- Si un resultado incluye datos de otra página (p. ej. productos en una lista de clientes), es lectura obsoleta: descartarlo.
+- `browser_wait_for(textGone)` sí detecta los mensajes de estado de BC ("Creando nueva empresa...", "El informe se está procesando").
+- Copiar una empresa demo (CRONUS ES) tarda ~90 s.
 
 Selectores estables (no dependen de refs que cambian): `iframe >> nth=0 >> internal:control=enter-frame >> internal:role=button[name="Lanzar"s]`, `... internal:role=menuitem[name="Línea"s] >> nth=-1` (el último = el del subformulario de líneas), `... internal:text="Líns. seguim. prod."s`. Si `browser_evaluate` sobre un ref devuelve vacío, el ref está obsoleto: hacer captura y volver a localizar.
 
