@@ -22,6 +22,9 @@ Revisarlos al leer el código (antes de ejecutar nada): detectarlos leyendo cues
 | T13 | Rendimiento | `CalcFields`/bucles `FindSet` en `OnAfterGetRecord` de listas, consultas sin clave | Listas lentas, bloqueos al registrar |
 | T14 | Localización ES | No contempla Cartera (efectos: movs. cliente tipo Efecto), SII, recargo de equivalencia, IVA no sujeto | Funciona en W1/CRONUS, falla en el cliente |
 | T15 | Dimensiones | No propaga `Dimension Set ID` o crea movimientos sin dimensiones obligatorias | Error de dimensiones al registrar o analítica incompleta |
+| T17 | Corrección/cancelación de documentos ya consumidos | Desarrollo o proceso que anula compras/ventas registradas | BC impide corregir una factura de compra cuya mercancía ya se vendió (mensaje engañoso "se ha devuelto"); hay que devolver solo lo pendiente |
+| T18 | Abonos sin liquidar | Abono de compra creado a mano (no "Corregir") | Factura y abono quedan ambos abiertos → saldos y vencimientos inflados hasta liquidar |
+| T19 | Configuración de usuario de almacén | Almacén con requerimientos sin empleado de almacén | No se pueden abrir recepciones/envíos de almacén |
 | T16 | Multiempresa / fechas | Datos por empresa, `WorkDate` vs `Posting Date`, fechas de registro permitidas | Falla solo en otra empresa o en otra fecha |
 
 ## B. Economía de pruebas (máxima confianza, mínimo tiempo)
@@ -35,6 +38,8 @@ Revisarlos al leer el código (antes de ejecutar nada): detectarlos leyendo cues
 8. **"Find entries" primero**: dice qué tablas tienen movimientos; abrir solo esas.
 9. **Regresión proporcional**: un cambio visual no necesita regresión de registro; un cambio en el registro sí.
 10. **Preguntas agrupadas**: si falta información, pedirla toda de una vez al principio.
+0. **Leer las NOTIFICACIONES antes de registrar (regla del usuario, obligatoria)**: la barra de notificaciones de BC avisa antes de que algo crítico falle o salga mal (stock insuficiente en la ubicación, límite de crédito, saldo vencido, cliente bloqueado, validaciones). Leerla siempre antes de lanzar/registrar; si avisa de algo crítico, parar y analizar (suele ser un dato de prueba mal preparado o el propio hallazgo). `L.post()` lo hace y aborta si detecta un aviso crítico (forzar con `L.force = true` solo si el caso lo exige).
+0b. **Fail-fast**: si una precondición del caso falla (campo que no se rellena, dato que no existe), PARAR; nunca capturar el error y seguir hasta registrar.
 11. **Límite de tiempo por obstáculo (regla del usuario)**: si un paso se resiste (2-3 intentos fallidos), preguntarse si merece la pena para el conocimiento. Si NO, saltar al siguiente apartado o tomar la vía simple (p. ej. crear datos propios en lugar de seguir investigando cuáles existen). Avisar al usuario en una línea.
 12. **Crear antes que descubrir** en datos de prueba: datos propios con prefijo reconocible (`QA-...`) son más rápidos y predecibles que buscar cuáles de la demo encajan.
 

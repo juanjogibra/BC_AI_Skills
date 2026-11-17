@@ -7,13 +7,21 @@
 param(
     [string]$Url = 'https://businesscentral.dynamics.com/{{BC_TENANT_ID}}/Preproduction',
     [int]$Port = 9222,
+    [string]$Name = '',
     [switch]$Visible,
     [switch]$Restart
 )
 
+# -Name: navegador independiente por cliente/entorno (perfil 'profile-<Name>' con su propio login).
+#   Ej.: -Name grantthornton -Port 9223. Sin -Name: perfil 'profile' (puerto 9222 por defecto).
+#   Cada proyecto apunta a su puerto con un MCP 'playwright' en ambito local (~/.claude.json > projects).
+$profileDir = if ($Name) { Join-Path $PSScriptRoot "profile-$Name" } else { Join-Path $PSScriptRoot 'profile' }
+
 if ($Restart) {
+    # Solo cierra la instancia de ESTE perfil, no las de otros clientes
+    $profilePattern = [regex]::Escape($profileDir) + '("|\s|$)'
     Get-CimInstance Win32_Process -Filter "Name='msedge.exe'" |
-        Where-Object { $_.CommandLine -like '*bc-browser\profile*' } |
+        Where-Object { $_.CommandLine -match $profilePattern } |
         ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
     Start-Sleep -Seconds 2
 }
@@ -24,7 +32,6 @@ $edge = @(
 ) | Where-Object { Test-Path $_ } | Select-Object -First 1
 if (-not $edge) { throw 'No se encuentra msedge.exe' }
 
-$profileDir = Join-Path $PSScriptRoot 'profile'
 
 try {
     $null = Invoke-RestMethod "http://127.0.0.1:$Port/json/version" -TimeoutSec 2
