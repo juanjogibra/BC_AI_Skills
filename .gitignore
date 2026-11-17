@@ -1,0 +1,11 @@
+# Datos reales de clientes: NUNCA se suben (repositorio público)
+privado/
+**/privado/
+
+# Salidas y perfiles del navegador de pruebas
+bc-browser/profile/
+bc-browser/playwright-output/
+.playwright-mcp/
+
+# Copias de seguridad locales
+*.bak-*
