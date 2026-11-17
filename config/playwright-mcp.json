@@ -1,0 +1,15 @@
+{
+  "playwright": {
+    "type": "stdio",
+    "command": "npx",
+    "args": [
+      "-y",
+      "@playwright/mcp@latest",
+      "--cdp-endpoint",
+      "http://127.0.0.1:9222",
+      "--output-dir",
+      "{{USERPROFILE_FWD}}/bc-browser/playwright-output"
+    ],
+    "env": {}
+  }
+}

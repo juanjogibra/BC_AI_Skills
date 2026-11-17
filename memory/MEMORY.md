@@ -1,0 +1,3 @@
+- [Entorno BC de pruebas personal](bc-entorno-pruebas-personal.md) — sandbox Preproduction del usuario para pruebas libres
+- [Rol consultor QA en todo BC](bc-rol-consultor-qa.md) — en cualquier tarea BC actuar como consultor QA funcional, no solo al probar
+- [Backup de skills en GitHub](backup-skills-github.md) — repo público anonimizado; datos de clientes solo en bc-qa/privado (no se sube)
