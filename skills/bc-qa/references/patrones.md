@@ -26,6 +26,7 @@ Revisarlos al leer el código (antes de ejecutar nada): detectarlos leyendo cues
 | T18 | Abonos sin liquidar | Abono de compra creado a mano (no "Corregir") | Factura y abono quedan ambos abiertos → saldos y vencimientos inflados hasta liquidar |
 | T19 | Configuración de usuario de almacén | Almacén con requerimientos sin empleado de almacén | No se pueden abrir recepciones/envíos de almacén |
 | T16 | Multiempresa / fechas | Datos por empresa, `WorkDate` vs `Posting Date`, fechas de registro permitidas | Falla solo en otra empresa o en otra fecha |
+| T20 | Importación desde Excel (Excel Buffer) | (a) El Excel del usuario trae hipervínculos con URI no válida (p. ej. `mailto:a@x.com;b@x.com`, que Excel crea al escribir varios correos en una celda); (b) filas "vacías" con solo espacios o restos de formato; (c) cabeceras escritas distinto a las del `case` | (a) `WorkbookReader.SheetNames ... Cannot access a disposed object 'DeflateStream'` antes de leer nada (el mensaje engaña: no es el stream); (b) líneas basura importadas (p. ej. tipo por defecto, sin nº documento); (c) la columna se ignora sin avisar. Probar siempre con el Excel REAL del usuario, no con uno hecho a mano |
 
 ## B. Economía de pruebas (máxima confianza, mínimo tiempo)
 1. **Leer antes de ejecutar**: lo que el código decide de forma determinista (un campo asignado, un filtro) se valida leyendo; ejecutar solo lo que necesita evidencia en tiempo de ejecución (registro, movimientos, interfaz).
@@ -49,4 +50,5 @@ Revisarlos al leer el código (antes de ejecutar nada): detectarlos leyendo cues
 3. **¿Qué cambió?**: versiones en página 2500/2508, registro de cambios, configuración reciente.
 4. **Aislar con una variación**: otro usuario (permisos), otro documento/cliente/producto (datos), otra empresa (configuración), sin la extensión (personalización).
 5. **Reproducir en sandbox**, nunca en Production.
+7. **Errores al leer un fichero (xlsx/zip/xml)**: inspeccionar el fichero real (un .xlsx es un ZIP: listar entradas, leer `workbook.xml`, `_rels`, `sharedStrings`) y crear variantes quitando UNA parte cada vez (hipervínculos, etiqueta de confidencialidad, hojas...). Subir cada variante aísla la causa en 2-3 importaciones sin tocar código.
 6. **Solución mínima**: corregir la causa, no el síntoma; proponer además la prueba que evita que vuelva y añadir el patrón aquí si es nuevo.

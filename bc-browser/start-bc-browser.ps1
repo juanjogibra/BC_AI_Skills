@@ -13,7 +13,7 @@ param(
 )
 
 # -Name: navegador independiente por cliente/entorno (perfil 'profile-<Name>' con su propio login).
-#   Ej.: -Name grantthornton -Port 9223. Sin -Name: perfil 'profile' (puerto 9222 por defecto).
+#   Ej.: -Name cliente1 -Port 9223. Sin -Name: perfil 'profile' (puerto 9222 por defecto).
 #   Cada proyecto apunta a su puerto con un MCP 'playwright' en ambito local (~/.claude.json > projects).
 $profileDir = if ($Name) { Join-Path $PSScriptRoot "profile-$Name" } else { Join-Path $PSScriptRoot 'profile' }
 
