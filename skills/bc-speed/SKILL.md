@@ -20,6 +20,9 @@ BC tarda en cargar páginas (3-15 s), registrar (5-15 s) y ejecutar informes/pro
 - `browser_wait_for(text)` no ve el iframe de BC (agota el tiempo). Sí funciona `textGone` para mensajes de estado ("Guardando", "El informe se está procesando").
 - Fin de un informe o proceso: BC vuelve a la página de origen o muestra un diálogo final. Sondear eso, no dormir 60 s.
 
+- **Esperar por el diálogo con nombre**, no por "hay algún diálogo": `getByRole('dialog', {name: /^Calcular plan/})` + sondeo hasta 20 s. Con el servidor lento, "hay diálogo" da falsos positivos (globos, avisos) y el paso siguiente falla a los 30 s.
+- **Servidor lento ("Guardando..." largo)**: no repetir la acción; sondear el resultado (título, campo). Repetir crea documentos duplicados.
+
 ## 3. Agrupar: muchas cosas por llamada
 - **Librería cargada una vez** (`load.js` → `page.__qa`) y tareas de 200-1000 bytes con `qa-run.sh` (−95 % de tokens frente a mandar el script entero).
 - Un solo `run_code` para una secuencia completa: abrir, rellenar, notificaciones, registrar, leer resultado. Cada ida y vuelta con el modelo cuesta más que varios pasos dentro del script.

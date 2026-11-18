@@ -1,6 +1,8 @@
-param([string]$Dest)
-. {{USERPROFILE}}\bc-browser\bc-api.ps1
-$c = '{{BC_TENANT_ID}}'
+# Descarga del entorno (dev/packages, sirve con la app S2S) los paquetes de las apps Microsoft instaladas y extrae .al / SymbolReference.json
+# CompanyId: Invoke-BCApi 'companies'
+param([string]$Dest, [Parameter(Mandatory)][string]$CompanyId)
+. "$env:USERPROFILE\bc-browser\bc-api.ps1"
+$c = $CompanyId
 $ext = Invoke-BCApi "companies($c)/extensions" -Api 'microsoft/automation/v2.0' | Where-Object { $_.publisher -eq 'Microsoft' -and $_.isInstalled }
 $sel = $ext | Where-Object { $_.displayName -match 'Power BI|API|Fabric|Excise|^Expense Agent \(|^Subscription Billing$|VAT Group|Cloud Migration API|Report|Dataverse|Intercompany|Automate|Analytics' -and $_.displayName -notmatch 'Demo|_Exclude_APIV2_' }
 New-Item -ItemType Directory -Force $Dest | Out-Null
