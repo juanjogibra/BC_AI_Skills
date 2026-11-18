@@ -5,6 +5,19 @@ Catálogo vivo. Cada vez que una prueba, revisión o incidencia revele un patró
 ## A. Problemas transversales que buscar SIEMPRE en un desarrollo
 Revisarlos al leer el código (antes de ejecutar nada): detectarlos leyendo cuesta minutos; descubrirlos en producción, días.
 
+**Cuándo (obligatorio)**: (1) al **diseñar**, antes de escribir AL, recorrer la tabla y resolver en el diseño cada patrón que aplique; (2) al **terminar el código**, pasar A0 antes de BCQuality y antes de compilar el .app de pruebas. Un patrón que se descubre en las pruebas es un fallo de este paso (caso real 18/11/2026: T24 apareció al registrar en PRE, tras implementar, compilar y revisar).
+
+### A0. Comprobación mecánica tras escribir el código (1-2 min, Grep sobre los objetos cambiados)
+| Buscar | Si aparece | Patrón |
+|---|---|---|
+| `Modify`/`Insert`/`Delete`/`ModifyAll` sobre tablas de registrados o movimientos (`Sales Shipment Header`, `Sales Invoice Header`, `Sales Cr.Memo Header`, `Purch. Rcpt. Header`, `Purch. Inv. Header`, `Return Receipt Header`, `*Ledger Entry`, `Posted *`) | El objeto debe llevar `Permissions = tabledata "<tabla>" = rm/rim...` (licencia: solo indirecto). El permissionset no basta | T24 |
+| `Commit(` en suscriptores o codeunits de registro | Justificarlo o quitarlo | T4 |
+| `Confirm(`/`Message(`/`Page.RunModal`/`Report.RunModal` en el camino de registro | Proteger con `GuiAllowed` o sacarlo del registro | T3 |
+| Bucle `FindSet ... repeat` sobre líneas que escribe en la cabecera o en otro documento | ¿Una vez por documento o por línea? Deduplicar | T23 |
+| `EventSubscriber` a un proceso de registro/almacén | ¿Es el flujo que usa el cliente? ¿Hay otros caminos (picking de inventario, envío de almacén, registro directo, en lote)? | T23 |
+| Campo nuevo en tabla origen con `TransferFields` a registrado | Mismo ID, tipo y longitud en el destino | T1 |
+| `SetRange` sobre el `Rec` recibido por `var` | No dejar filtros al llamador | T11 |
+
 | # | Patrón | Cómo se detecta | Síntoma típico |
 |---|---|---|---|
 | T1 | Campo de cabecera/línea que no llega al registrado | tableextension en `Sales Header` sin la misma ID de campo en `Sales Invoice Header`/`Sales Shipment Header`/`Sales Cr.Memo Header`/archivo (`TransferFields`) | Campo vacío en factura registrada o en archivo |
@@ -30,6 +43,7 @@ Revisarlos al leer el código (antes de ejecutar nada): detectarlos leyendo cues
 | T21 | Clave propia (Guid `Id`) como clave OData | Campo Id asignado solo si está vacío o en un evento concreto; registros creados con `TransferFields` (líneas derivadas de transferencia, copiar documento) o sin pasar por ese evento (líneas de comentario) | En Power Apps/integraciones salen líneas repetidas o se modifica la línea equivocada; comprobar Ids nulos/duplicados en la respuesta del servicio |
 | T22 | Power Apps + conector BC on-premise | El conector `dynamicssmbonprem` rechaza `$filter` (`eq`, `startswith`: "is not allowed"); las apps filtran en local sobre las primeras N filas (límite de filas de datos, máx. 2000) | Pedidos sin líneas cuando el servicio devuelve más de N filas; no "arreglar" la delegación con `eq` (rompe la app); reducir el volumen en origen o vigilar el recuento |
 | T23 | Desarrollo enganchado a un solo flujo de almacén | Suscriptor solo en `Whse.-Post Shipment` (envío de almacén) cuando el almacén usa picking de inventario (`Whse.-Activity-Post`, evento `OnAfterPostSourceDocument`, albarán = `SalesHeader."Last Shipping No."`) o registro directo del pedido; o al revés. Preguntar qué flujo usa cada almacén (ficha 14: Requiere envío/picking) | "No funciona en PRE / no sé probarlo": el código existe pero no se ejecuta. Además, copiar datos a registrados recorriendo líneas en vez de documentos distintos duplica comentarios (una copia por línea) |
+| T24 | Modificar documentos registrados sin permiso indirecto | Codeunit propio que hace `Modify` en tablas de registrados (110/112/114/120/122/124, `Sales Shipment Header`...) sin la propiedad `Permissions = tabledata "<tabla>" = rm` en el propio objeto. El permissionset NO basta: la **licencia** solo permite Modify indirecto (el estándar lo hace desde "Shipment Header - Edit" y similares) | Al registrar: "Su licencia no le concede los siguientes permisos en TableData 110 ... Modify" y se deshace todo el registro. No lo detecta la compilación ni la revisión; sale a la primera prueba real (comprobado 18/11/2026) |
 
 ## B. Economía de pruebas (máxima confianza, mínimo tiempo)
 1. **Leer antes de ejecutar**: lo que el código decide de forma determinista (un campo asignado, un filtro) se valida leyendo; ejecutar solo lo que necesita evidencia en tiempo de ejecución (registro, movimientos, interfaz).

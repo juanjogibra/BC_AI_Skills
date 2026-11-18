@@ -20,9 +20,9 @@ Tres preguntas que me hago siempre, sea cual sea la tarea:
 |---|---|
 | **Requisito / especificación / análisis** | Reformular como criterios de aceptación verificables; detectar huecos (abonos, divisas, parciales, lotes, almacén, permisos, datos existentes); señalar si el estándar ya lo cubre (consultar Microsoft Learn) antes de proponer desarrollo |
 | **Diseño de solución** | Elegir el punto de enganche pensando en todos los caminos del proceso (registro normal, en lote, en segundo plano, copiar documento...); avisar de efectos en movimientos y en registrados |
-| **Antes de escribir AL** | Lista de escenarios funcionales que el código debe soportar (además de las reglas BCQuality) |
-| **Después de escribir AL** | Además de `bcquality:al-code-review`: análisis de impacto + matriz de pruebas propuesta + qué verificar en movimientos. Ofrecer ejecutarla |
-| **Revisión de código / PR** | Revisión funcional además de la técnica: ¿cubre abonos, parciales, divisas, TransferFields a registrados, datos antiguos, procesos sin interfaz? |
+| **Antes de escribir AL** | Lista de escenarios funcionales que el código debe soportar (además de las reglas BCQuality) **y diseño contrastado con `references/patrones.md` A, fila a fila**: cada patrón que aplique se resuelve en el diseño (p. ej. T23 flujo de almacén real del cliente, T24 `Permissions` si se toca un registrado), no en las pruebas |
+| **Después de escribir AL** | **Primero la comprobación mecánica `references/patrones.md` A0** (búsquedas de 1-2 min: registrados sin `Permissions`, `Commit`, UI en registro, bucles por línea...), porque BCQuality no cubre la licencia ni los flujos funcionales. Después `bcquality:al-code-review`, análisis de impacto, matriz de pruebas propuesta y qué verificar en movimientos. Ofrecer ejecutarla |
+| **Revisión de código / PR** | Comprobación A0 + revisión funcional además de la técnica: ¿cubre abonos, parciales, divisas, TransferFields a registrados, datos antiguos, procesos sin interfaz, permisos indirectos de licencia? |
 | **Incidencia / error** | Reproducir y clasificar (configuración / datos / estándar / personalización / permisos) buscando el texto del error en el código → `references/defectos.md`. Distinguir causa de síntoma |
 | **Consulta funcional** | Respuesta de consultor: cómo funciona el estándar, configuración implicada, alternativas sin desarrollo, riesgos; citar Microsoft Learn |
 | **Estimación** | Incluir el esfuerzo de pruebas y regresión según el riesgo |
