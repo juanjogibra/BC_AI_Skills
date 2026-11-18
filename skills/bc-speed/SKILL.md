@@ -55,6 +55,8 @@ BC tarda en cargar páginas (3-15 s), registrar (5-15 s) y ejecutar informes/pro
 - Navegador: comprobar que vive (`/json/list` con tiempo límite) antes de la sesión. La sesión de BC caduca a ~1 h de uso intensivo: agrupar el trabajo de interfaz.
 - Crear datos propios (`QA-...`) antes que buscar cuáles de la demo encajan.
 
+- Commits del backup: escribir el mensaje en un fichero desde Bash (heredoc) y `git commit -F <fichero>`. En PowerShell 5.1 un mensaje con comillas dobles se parte en varios argumentos y el commit falla.
+
 ## 8. Medir y mejorar
 - Si una rutina tarda notablemente, medirla (`Stopwatch`, `time`) y buscar la causa: espera fija, ida y vuelta innecesaria, lectura de más, falta de filtro.
 - Anotar aquí cada mejora comprobada (qué, cuánto ahorra, fecha). Corregir lo que resulte falso.
