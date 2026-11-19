@@ -2,7 +2,8 @@
 
 ## Procedimiento
 1. **Reproducir** con los mínimos datos. Anotar texto literal del error, página, acción, documento.
-2. **Detalle técnico**: en el diálogo de error, "Copiar detalles" incluye la pila de llamadas AL (si el usuario tiene permisos). *(pendiente de comprobar en la interfaz en español)*. Si el registro falla, la página 700 "Mensajes de error" muestra la descripción y el contexto.
+2. **Detalle técnico**: en el diálogo de error, "Compartir detalles" → "Copiar detalles del error" incluye la pila de llamadas AL con objeto, línea y extensión (comprobado 20/11/2026 en la interfaz en español). Si el registro falla, la página 700 "Mensajes de error" muestra la descripción y el contexto.
+   - **"Error de licencia" no siempre es la licencia de BC**: muchos ISV (p. ej. productos con su propio gestor de licencias) cierran páginas estándar desde un `pageextension` `OnOpenPage` cuando el usuario no tiene licencia de su producto ("Page Clientes has to close"). Si falla en un entorno y no en otro del mismo tenant, comparar extensiones instaladas (page 2500, filtro por editor): las licencias de BC son por tenant, no por entorno. Los usuarios técnicos/delegados suelen no tener licencia de ese ISV.
 3. **Buscar el texto del error** en el código:
    - Repositorio de la extensión (Grep del texto del Label en inglés o del texto traducido en `.xlf`).
    - Código estándar (`MSDyn365BC.Code.History` o fuentes en `.alpackages`).

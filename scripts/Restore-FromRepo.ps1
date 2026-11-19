@@ -56,6 +56,10 @@ if (Test-Path $src) {
     Restore-File $src $dst
 }
 
+# 2b. Subagentes propios
+Get-ChildItem (Join-Path $repo 'agents') -File -Filter *.md -ErrorAction SilentlyContinue |
+    ForEach-Object { Restore-File $_.FullName (Join-Path $ClaudeDir "agents\$($_.Name)") }
+
 # 3. Memoria
 $memDir = Join-Path $ClaudeDir "projects\$memSlug\memory"
 Get-ChildItem (Join-Path $repo 'memory') -File -Filter *.md -ErrorAction SilentlyContinue | ForEach-Object {

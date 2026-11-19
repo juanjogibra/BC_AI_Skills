@@ -5,15 +5,31 @@ const L={
 fr,wait,
 dialogs:()=>page.evaluate(()=>[...document.querySelector('iframe').contentDocument.querySelectorAll('[role=dialog]')]
 .map(x=>x.innerText.replace(/\s+/g,' ').slice(0,300)).filter(t=>t&&!/^Acerca de/.test(t))).catch(()=>[]),
-answer:async (names)=>{for(const n of names){const b=fr.getByRole('dialog').getByRole('button',{name:n,exact:true});if(await b.count()){await b.first().click().catch(()=>{});await wait(1500);return n;}}return null;},
+ensureVisible:async ()=>{const st=()=>page.evaluate(()=>document.visibilityState).catch(()=>'?');if(await st()==='visible')return 'visible';
+await page.bringToFront().catch(()=>{});
+try{const s=await page.context().newCDPSession(page);const {windowId}=await s.send('Browser.getWindowForTarget');await s.send('Browser.setWindowBounds',{windowId,bounds:{windowState:'normal'}});await s.send('Browser.setWindowBounds',{windowId,bounds:{windowState:'maximized'}});await s.send('Page.bringToFront').catch(()=>{});await s.detach().catch(()=>{});}catch(e){}
+for(let i=0;i<10;i++){if(await st()==='visible')return 'restaurada';await wait(300);}return 'OCULTA';},
+clk:async (l,t=3000)=>{if(await L.ensureVisible()==='OCULTA')return null;
+try{await l.click({timeout:t});return 'click';}catch(e){}try{await l.click({force:true,timeout:t});return 'force';}catch(e){}try{await l.dispatchEvent('click',{},{timeout:t});return 'dispatch';}catch(e){}return null;},
+topDialog:()=>fr.getByRole('dialog').filter({hasNot:fr.getByRole('dialog',{name:/^Acerca de/})}).last(),
+answer:async (names)=>{const ds=fr.getByRole('dialog');
+const top=async ()=>{const n=await ds.count();return n?ds.nth(n-1):null;};
+for(let k=0;k<3;k++){const t=await top();if(!t)break;const txt=await t.innerText().catch(()=>'');if(!/modal abierto en otra ventana/i.test(txt))break;const ok=t.getByRole('button',{name:'Aceptar',exact:true});if(!(await ok.count())||!(await L.clk(ok.first())))break;await wait(800);}
+const n=await ds.count();
+for(let i=n-1;i>=0;i--){const d=ds.nth(i);if(/^Acerca de/.test(await d.getAttribute('aria-label').catch(()=>'')||''))continue;
+for(const nm of names){const b=d.getByRole('button',{name:nm,exact:true}).or(d.getByRole('menuitem',{name:nm,exact:true}));if(await b.count()){const r=await L.clk(b.last());if(!r)return null;await wait(1500);return nm;}}}
+return null;},
 set:async (scope,re,v)=>{const el=scope.getByRole('combobox',{name:re}).or(scope.getByRole('textbox',{name:re})).first();await el.fill(String(v));await el.press('Tab');await wait(2000);return el.inputValue().catch(()=>'?');},
-expandLines:()=>page.evaluate(()=>{const d=document.querySelector('iframe').contentDocument;[...d.querySelectorAll('[aria-expanded="false"]')].filter(b=>/^\s*Líneas\s*$/.test(b.innerText)).forEach(b=>b.click());}).catch(()=>{}),
+expandLines:async ()=>{const visible=()=>L.lines().isVisible().catch(()=>false);
+if(await visible())return 'ya visible';
+await page.evaluate(()=>{const d=document.querySelector('iframe').contentDocument;const b=[...d.querySelectorAll('[aria-expanded="false"]')].find(b=>/^\s*Líneas\s*$/.test(b.innerText));if(b)b.click();}).catch(()=>{});
+for(let i=0;i<12;i++){await wait(400);if(await visible())return 'expandida';}return 'NO VISIBLE';},
 lines:()=>fr.getByRole('grid',{name:/Líneas|Lines/}).first(),
 columns:async (grid)=>(await grid.getByRole('columnheader').allInnerTexts()).map(t=>t.replace(/\s+/g,' ').trim()).filter(Boolean),
 noUnload:()=>page.evaluate(()=>{window.onbeforeunload=null;try{document.querySelector('iframe').contentWindow.onbeforeunload=null;}catch(e){}}).catch(()=>{}),
-open:async (pageId,extra='')=>{await page.bringToFront().catch(()=>{});await L.noUnload();for(let t=0;t<3;t++){try{await page.goto(`${BASE}&page=${pageId}${extra}`);break;}catch(e){await wait(2000);}}await wait(1500);for(let i=0;i<40;i++){const ok=await page.evaluate(()=>{const d=document.querySelector('iframe')?.contentDocument;return !!(d&&d.querySelector('form')&&document.title&&document.title !=='Dynamics 365 Business Central');}).catch(()=>false);if(ok)break;await wait(300);}await wait(800);await L.tips();},
-tips:async ()=>{for(let i=0;i<3;i++){const t=fr.getByRole('dialog',{name:/^Acerca de/}).first();if(!(await t.count()))break;await t.getByRole('button',{name:'Descartar'}).click({timeout:5000}).catch(()=>{});await wait(600);}},
-acts:async (re,tabs=['Inicio','Preparar','Recibo','Pedido','Acciones','Línea','Procesar','Registrar'])=>{const out=new Set();const grab=()=>page.evaluate((src)=>{const rx=new RegExp(src,'i');return [...document.querySelector('iframe').contentDocument.querySelectorAll('[role=menuitem],button[title]')].map(e=>(e.getAttribute('aria-label')||e.innerText||e.getAttribute('title')||'').trim()).filter(t=>t&&t.length<60&&rx.test(t));},re.source);(await grab()).forEach(x=>out.add(x));for(const tb of tabs){const m=fr.getByRole('menuitem',{name:tb,exact:true}).first();if(await m.count()){await m.click().catch(()=>{});await wait(500);(await grab()).forEach(x=>out.add(x));}}return [...out];},
+open:async (pageId,extra='')=>{await L.ensureVisible();await L.noUnload();for(let t=0;t<3;t++){try{await page.goto(`${BASE}&page=${pageId}${extra}`);break;}catch(e){await wait(2000);}}await wait(1500);for(let i=0;i<40;i++){const ok=await page.evaluate(()=>{const d=document.querySelector('iframe')?.contentDocument;return !!(d&&d.querySelector('form')&&document.title&&document.title !=='Dynamics 365 Business Central');}).catch(()=>false);if(ok)break;await wait(300);}await wait(800);await L.tips();},
+tips:async ()=>{for(let i=0;i<3;i++){const t=fr.getByRole('dialog',{name:/^Acerca de/}).first();if(!(await t.count()))break;await L.clk(t.getByRole('button',{name:'Descartar'}));await wait(600);}},
+acts:async (re,tabs=['Inicio','Preparar','Recibo','Pedido','Acciones','Línea','Procesar','Registrar'])=>{const out=new Set();const grab=()=>page.evaluate((src)=>{const rx=new RegExp(src,'i');return [...document.querySelector('iframe').contentDocument.querySelectorAll('[role=menuitem],button[title]')].map(e=>(e.getAttribute('aria-label')||e.innerText||e.getAttribute('title')||'').trim()).filter(t=>t&&t.length<60&&rx.test(t));},re.source);(await grab()).forEach(x=>out.add(x));for(const tb of tabs){const m=fr.getByRole('menuitem',{name:tb,exact:true}).first();if(await m.count()){await L.clk(m,1500);await wait(500);(await grab()).forEach(x=>out.add(x));}}return [...out];},
 read:async (pageId,filter,max=15)=>{
 await L.open(pageId,filter?'&filter='+encodeURIComponent(filter):'');
 for(let i=0;i<20;i++){
@@ -27,27 +43,32 @@ if(r)return r;await wait(1000);
 }
 return 'SIN LEER';
 },
-menu:async (name)=>{await fr.getByRole('menuitem',{name,exact:typeof name==='string'}).first().click();await wait(1500);},
+menu:async (name)=>{const ex=typeof name==='string';const dlgs=fr.getByRole('dialog');let m=null;
+const cand=(s)=>{let c=s.getByRole('menuitem',{name,exact:ex}).or(s.getByRole('button',{name,exact:ex}));if(ex)c=c.or(s.locator('button[title="'+name.replace(/"/g,'\\"')+'"]'));return c;};
+if(await dlgs.count()){const c=cand(dlgs.last());if(await c.count())m=c.first();}
+if(!m)m=cand(fr).first();
+const r=await L.clk(m);if(!r)throw new Error('menu no pulsable: '+name);await wait(1500);return r;},
+menuPath:async (path)=>{const via=[];for(const p of path)via.push(await L.menu(p));return via;},
 post:async (option,act=/^Registrar(...)?$/)=>{
 const pre=await L.notes();if(!L.force&&pre.some(t=>/disponible|insuficiente|no está en inventario|bloquead|crédito|vencid|saldo/i.test(t)))return {abortado:'NOTIFICACIÓN CRÍTICA ANTES DE REGISTRAR',notificaciones:pre};
-await fr.getByRole('menuitem',{name:'Inicio',exact:true}).first().click().catch(()=>{});await wait(600);
-await fr.getByRole('menuitem',{name:act}).first().click();await wait(2500);
-if(option){await fr.getByRole('dialog').getByText(new RegExp('^'+option+'$')).first().click().catch(()=>{});await wait(800);await L.answer(['Aceptar']);}
+await L.clk(fr.getByRole('menuitem',{name:'Inicio',exact:true}).first(),1500);await wait(600);
+if(!(await L.clk(fr.getByRole('menuitem',{name:act}).first())))return {abortado:'ACCIÓN DE REGISTRO NO PULSABLE (¿deshabilitada?)'};await wait(2500);
+if(option){await L.clk(fr.getByRole('dialog').getByText(new RegExp('^'+option+'$')).first());await wait(800);await L.answer(['Aceptar']);}
 const log=[];
 for(let i=0;i<6;i++){await wait(3000);const ds=await L.dialogs();if(!ds.length){if(i>1)break;continue;}const t=ds[ds.length - 1];log.push(t.slice(0,200));
 if(/abrir|registr.*n[úu]mero|se registr/i.test(t)){await L.answer(['No','Aceptar']);break;}
-if(/¿/.test(t)){await L.answer(['Sí']);continue;}
+if(/¿/.test(t)){if(log.length>1&&log[log.length-2]===log[log.length-1]){await page.keyboard.press('Enter');await wait(1500);const again=(await L.dialogs()).slice(-1)[0];if(again&&again.slice(0,200)===log[log.length-1])return {abortado:'DIÁLOGO DE CONFIRMACIÓN NO SE CIERRA',dialogos:log};continue;}if(!(await L.answer(['Sí'])))return {abortado:'NO SE PUDO RESPONDER Sí',dialogos:log};continue;}
 await L.answer(['Aceptar']);}
 return {dialogos:log,error700:await L.err700(),titulo:await page.title()};
 },
 err700:()=>page.evaluate(()=>{const d=document.querySelector('iframe').contentDocument;const g=[...d.querySelectorAll('[role=grid]')].find(x=>/Acción recomendada/.test(x.innerText));return g?[...g.querySelectorAll('tbody tr')].map(x=>x.innerText.replace(/\s+/g,' ').trim()).filter(t=>t.length>4):null;}).catch(()=>null),
 tracking:async (fields)=>{
-await fr.getByRole('menuitem',{name:'Línea',exact:true}).last().click();await wait(800);
-await fr.getByText('Información relacionada',{exact:true}).last().click().catch(()=>{});await wait(800);
-await fr.getByText('Líns. seguim. prod.',{exact:true}).first().click();await wait(5000);
+await L.clk(fr.getByRole('menuitem',{name:'Línea',exact:true}).last());await wait(800);
+await L.clk(fr.getByText('Información relacionada',{exact:true}).last(),1500);await wait(800);
+await L.clk(fr.getByText('Líns. seguim. prod.',{exact:true}).first());await wait(5000);
 const dlg=fr.getByRole('dialog',{name:/Líns\. seguim\. prod\./}).first();
 for(const [re,v] of fields)await L.set(dlg,re,v);
-await dlg.getByRole('button',{name:'Cerrar',exact:true}).click().catch(()=>{});await wait(3000);
+await L.clk(dlg.getByRole('button',{name:'Cerrar',exact:true}));await wait(3000);
 const d=await L.dialogs();await L.answer(['Sí','Aceptar']);return d;
 },
 errs:()=>page.evaluate(()=>{const d=document.querySelector('iframe').contentDocument;return [...new Set([...d.querySelectorAll('[class*=error],[class*=Error],[role=alert]')].map(e=>(e.getAttribute('title')||e.innerText||'').replace(/\s+/g,' ').trim()).filter(t=>t.length>10&&!/Alt \+ I/.test(t)))].slice(0,3);}).catch(()=>[]),

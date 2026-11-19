@@ -55,6 +55,7 @@ BC tarda en cargar páginas (3-15 s), registrar (5-15 s) y ejecutar informes/pro
 - **Toda llamada de red con tiempo límite** (`-TimeoutSec`, `curl --max-time`, `timeout N`). Una llamada sin límite puede bloquear la sesión entera.
 - **Si PowerShell deja de responder** (ni `'hola'` termina; comprobado 18/11/2026): no insistir ni encadenar más comandos PowerShell. Probar la red con `curl` desde Bash para separar red y shell, detener las tareas en segundo plano colgadas y seguir por Bash/Node o por la interfaz. Se recuperó solo al rato; mientras tanto se avanzó por la interfaz sin perder tiempo. Desde Bash: `timeout 60 powershell -NoProfile -ExecutionPolicy Bypass -Command ". .\bc-api.ps1; ..."` (sin Bypass no carga `bc-api.ps1`).
 - Navegador: comprobar que vive (`/json/list` con tiempo límite) **y que la URL de la pestaña es de businesscentral.dynamics.com, no de login.microsoftonline.com**, ANTES de delegar en `bc-tester` (comprobado 19/11/2026: el subagente arrancó para nada porque la sesión había caducado). Si pide login: `start-bc-browser.ps1 -Restart -Visible` y que el usuario inicie sesión. La sesión de BC caduca a ~1 h de uso intensivo: agrupar el trabajo de interfaz.
+- **Ventana de Chrome tapada = clics colgados** (comprobado 19/11/2026, costó ~12 min por kata): con la ventana oculta la página no se pinta y Playwright espera "stable" sin fin. `L.ensureVisible()` (lo llaman `L.open` y `L.clk`) la restaura si está minimizada, pero NO destapa una ventana maximizada tapada por otra: arrancar Chrome con los flags anti-ocultación de `start-bc-browser.ps1` o dejarlo encima. Medido en katas: 27-40 min → 19 min con la ventana visible y la librería corregida.
 - Crear datos propios (`QA-...`) antes que buscar cuáles de la demo encajan.
 
 - Commits del backup: escribir el mensaje en un fichero desde Bash (heredoc) y `git commit -F <fichero>`. En PowerShell 5.1 un mensaje con comillas dobles se parte en varios argumentos y el commit falla.
@@ -62,6 +63,7 @@ BC tarda en cargar páginas (3-15 s), registrar (5-15 s) y ejecutar informes/pro
 ## 8. Medir y mejorar
 - Si una rutina tarda notablemente, medirla (`Stopwatch`, `time`) y buscar la causa: espera fija, ida y vuelta innecesaria, lectura de más, falta de filtro.
 - Anotar aquí cada mejora comprobada (qué, cuánto ahorra, fecha). Corregir lo que resulte falso.
+- **Bucle con `bc-tester`**: delegar siempre con la plantilla `bc-qa/plantillas/encargo-bc-tester.md` (el encargo completo evita idas y vueltas). Su informe trae "Qué me frenó" (tiempo por caso, intentos fallidos, causa) y "Predicciones fallidas": revisarlos y pasar lo comprobado aquí (velocidad) o a `bc-qa/references/patrones.md` (criterio).
 
 ## Lo que NO se sacrifica por velocidad
 - Leer las **notificaciones antes de registrar** (`L.post` lo hace y aborta si hay un aviso crítico) y la **lista previa al registro** de `bc-qa/references/patrones.md` 0a (cantidades a enviar/recibir/facturar, exigencias del almacén). Predecir el resultado leyendo es más rápido que registrar y que recuperarse de una página 700 que se abre encima y deja el documento inerte (los clics fallan con "element is inert").

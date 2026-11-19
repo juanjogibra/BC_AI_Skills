@@ -48,7 +48,12 @@ try {
         "--user-data-dir=`"$profileDir`"",
         '--no-first-run',
         '--no-default-browser-check',
-        '--window-size=1600,1000'
+        '--window-size=1600,1000',
+        # Sin estos, Chrome deja de pintar la pestaña con la ventana tapada o minimizada y los clics de Playwright
+        # se quedan esperando "stable" (comprobado 19/11/2026)
+        '--disable-backgrounding-occluded-windows',
+        '--disable-renderer-backgrounding',
+        '--disable-background-timer-throttling'
     )
     if (-not $Visible) { $edgeArgs += '--headless=new' }
     Start-Process $edge -ArgumentList ($edgeArgs + $Url)

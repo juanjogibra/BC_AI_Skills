@@ -41,7 +41,7 @@ function Export-File([string]$src, [string]$dst) {
 }
 
 # Limpiar destino para reflejar borrados
-foreach ($d in 'skills', 'claude', 'memory', 'bc-browser') {
+foreach ($d in 'skills', 'claude', 'memory', 'bc-browser', 'agents') {
     $p = Join-Path $repo $d
     if (Test-Path $p) { Remove-Item $p -Recurse -Force }
 }
@@ -60,6 +60,9 @@ Get-ChildItem $skillsDir -Directory | Where-Object { $_.Name -ne 'synced' } | Fo
 # 2. CLAUDE.md global
 $claudeMd = Join-Path $ClaudeDir 'CLAUDE.md'
 if (Test-Path $claudeMd) { Export-File $claudeMd (Join-Path $repo 'claude\CLAUDE.md') }
+# 2b. Subagentes propios (p. ej. bc-tester)
+Get-ChildItem (Join-Path $ClaudeDir 'agents') -File -Filter *.md -ErrorAction SilentlyContinue |
+    ForEach-Object { Export-File $_.FullName (Join-Path $repo "agents\$($_.Name)") }
 
 # 3. Memoria
 $memDir = Join-Path $ClaudeDir "projects\$memSlug\memory"
