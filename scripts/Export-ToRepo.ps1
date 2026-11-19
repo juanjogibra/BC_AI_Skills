@@ -70,6 +70,9 @@ if (Test-Path $memDir) {
 # 4. Script del navegador de pruebas (sin perfil ni salidas)
 $browserScript = Join-Path $BrowserDir 'start-bc-browser.ps1'
 if (Test-Path $browserScript) { Export-File $browserScript (Join-Path $repo 'bc-browser\start-bc-browser.ps1') }
+# Lanzador del MCP bc-en-vivo en ámbito de usuario (arranca la última versión de la extensión bc-ui-verifier)
+$launcher = Join-Path $BrowserDir 'en-vivo-launcher.mjs'
+if (Test-Path $launcher) { Export-File $launcher (Join-Path $repo 'bc-browser\en-vivo-launcher.mjs') }
 
 # 5. Control de restos sensibles
 $userName = $env:USERNAME

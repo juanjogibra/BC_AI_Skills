@@ -54,6 +54,53 @@ errs:()=>page.evaluate(()=>{const d=document.querySelector('iframe').contentDocu
 pick:async (scope,re,label)=>{const s=scope.getByRole('combobox',{name:re}).first();await s.selectOption({label});await page.keyboard.press('Tab');await wait(1500);return s.evaluate(x=>x.options[x.selectedIndex].text).catch(()=>'?');},
 fields:(re)=>page.evaluate((src)=>{const d=document.querySelector('iframe').contentDocument;const rx=new RegExp(src||'.','i');const nm=e=>e.getAttribute('aria-label')||(e.getAttribute('aria-labelledby')||'').split(' ').map(id=>d.getElementById(id)?.innerText||'').join(' ').trim();return [...new Set([...d.querySelectorAll('input,select,[role=combobox],[role=textbox]')].map(nm).filter(t=>t&&rx.test(t)))].slice(0,40);},re?re.source:''),
 notes:()=>page.evaluate(()=>{const d=document.querySelector('iframe').contentDocument;const out=new Set();d.querySelectorAll('[class*=notification],[class*=Notification],[role=status],[role=alert]').forEach(e=>{const t=(e.innerText||'').replace(/\s+/g,' ').trim();if(t.length>15&&t.length<600)out.add(t);});return [...out].slice(0,5);}).catch(()=>[]),
+readCard:async (pageId,filter,required=[])=>{
+await L.open(pageId,'&mode=edit'+(filter?'&filter='+encodeURIComponent(filter):''));
+const expand=()=>page.evaluate(()=>{const d=document.querySelector('iframe').contentDocument;[...d.querySelectorAll('[aria-expanded="false"]')].forEach(b=>{const t=(b.innerText||'').trim();if(t&&t.length<40&&!/Más opciones|Inicio|Acciones|Preparar|Informe|Navegar|Línea|Compartir|Diseño|Administrar/.test(t))b.click();});[...d.querySelectorAll('button,[role=button]')].filter(b=>/^Mostrar más$/i.test((b.innerText||'').trim())).forEach(b=>b.click());}).catch(()=>{});
+const leer=()=>page.evaluate(()=>{const d=document.querySelector('iframe').contentDocument;const out={};const nm=e=>(e.getAttribute('aria-label')||(e.getAttribute('aria-labelledby')||'').split(' ').map(i=>d.getElementById(i)?.innerText||'').join(' ')).replace(/\s+/g,' ').trim();
+d.querySelectorAll('input,select,[role=switch],[role=checkbox]').forEach(e=>{const n=nm(e);if(!n||n.length>60||out[n]!==undefined)return;let v;if(e.tagName==='SELECT')v=e.selectedOptions[0]?.text??'';else if(e.type==='checkbox'||e.getAttribute('role')==='switch'||e.getAttribute('role')==='checkbox')v=(e.checked??e.getAttribute('aria-checked')==='true')===true||e.getAttribute('aria-checked')==='true';else v=e.value;out[n]=v;});out.__titulo=document.title;return out;}).catch(()=>({}));
+let out={},prev=-1;
+for(let i=0;i<12;i++){await expand();await wait(i?700:900);out=await leer();const n=Object.keys(out).length;const faltan=required.filter(k=>out[k]===undefined);if(!faltan.length&&n===prev)break;prev=n;}
+out.__faltan=required.filter(k=>out[k]===undefined);
+return out;
+},
+preflight:async ({item,customer,vendor,location}={})=>{
+const av=[],datos={};const num=s=>parseFloat(String(s||'0').replace(/\./g,'').replace(',','.'))||0;
+const falta=(qué,f)=>{if(f.__faltan&&f.__faltan.length)av.push(`LECTURA INCOMPLETA en ${qué}: ${f.__faltan.join(', ')} (no se pudo comprobar; revisar a mano)`);};
+if(item){const f=await L.readCard(30,`'No.' IS '${item}'`,['Tipo','Bloqueado','Reserva','Directiva reaprov.','Cód. compra','Cód. seguim. prod.','Ventas bloqueadas','Compras bloqueadas']);falta('producto '+item,f);datos.producto={Tipo:f['Tipo'],Bloqueado:f['Bloqueado'],'Ventas bloqueadas':f['Ventas bloqueadas'],'Compras bloqueadas':f['Compras bloqueadas'],Reserva:f['Reserva'],'Directiva reaprov.':f['Directiva reaprov.'],'Sistema reposición':f['Sistema reposición'],'Nº proveedor':f['Nº proveedor'],'Cód. compra':f['Cód. compra'],'Cód. seguim. prod.':f['Cód. seguim. prod.']??f['Cód. seguimiento producto'],'Grupo registro inventario':f['Grupo registro inventario'],'Grupo contable prod. gen.':f['Grupo contable prod. gen.'],'Evitar inventario negativo':f['Evitar inventario negativo']};
+const p=datos.producto;
+if(p.Tipo&&p.Tipo!=='Inventario')av.push(`Producto ${item}: Tipo="${p.Tipo}" → no genera stock ni se planifica`);
+if(p.Bloqueado===true)av.push(`Producto ${item} BLOQUEADO`);
+if(p['Ventas bloqueadas']===true)av.push(`Producto ${item}: ventas bloqueadas → no se puede usar en documentos de venta`);
+if(p['Compras bloqueadas']===true)av.push(`Producto ${item}: compras bloqueadas → no se puede usar en documentos de compra`);
+if(p.Reserva==='Nunca')av.push(`Producto ${item}: Reserva=Nunca → "Reserva no debe ser Nunca" al reservar (la línea copia el valor al validar el Nº)`);
+if(p.Reserva==='Siempre')av.push(`Producto ${item}: Reserva=Siempre → reserva automática al crear líneas`);
+if(!p['Directiva reaprov.'])av.push(`Producto ${item}: sin Directiva reaprov. → la planificación no lo planifica`);
+if(p['Cód. compra'])av.push(`Producto ${item}: Cód. compra=${p['Cód. compra']} → líneas de venta con envío directo/pedido especial`);
+if(p['Cód. seguim. prod.'])av.push(`Producto ${item}: seguimiento ${p['Cód. seguim. prod.']} → exige lote/serie al registrar`);
+if(p.Tipo==='Inventario'&&!p['Grupo registro inventario'])av.push(`Producto ${item}: sin Grupo registro inventario → no se podrá registrar`);
+if(!p['Grupo contable prod. gen.'])av.push(`Producto ${item}: sin Grupo contable prod. gen.`);}
+if(customer){const f=await L.readCard(21,`'No.' IS '${customer}'`,['Bloqueado','Reserva','Crédito máximo (DL)','Cód. forma pago','Cód. divisa']);falta('cliente '+customer,f);datos.cliente={Bloqueado:f['Bloqueado'],Reserva:f['Reserva'],'Crédito máximo (DL)':f['Crédito máximo (DL)'],'Cód. forma pago':f['Cód. forma pago'],'Cód. almacén':f['Cód. almacén'],'Cód. divisa':f['Cód. divisa']};
+const c=datos.cliente;
+if(c.Bloqueado&&c.Bloqueado.trim())av.push(`Cliente ${customer} bloqueado (${c.Bloqueado})`);
+if(c.Reserva==='Nunca')av.push(`Cliente ${customer}: Reserva=Nunca → sus líneas no se podrán reservar`);
+if(num(c['Crédito máximo (DL)'])>0)av.push(`Cliente ${customer}: crédito máximo ${c['Crédito máximo (DL)']} → al superarlo solo sale una notificación (no bloquea)`);
+if(c['Cód. almacén'])av.push(`Cliente ${customer}: almacén por defecto ${c['Cód. almacén']} en las líneas`);
+if(c['Cód. divisa'])av.push(`Cliente ${customer}: divisa ${c['Cód. divisa']}`);}
+if(vendor){const f=await L.readCard(26,`'No.' IS '${vendor}'`,['Bloqueado','Cód. forma pago','Cód. divisa']);falta('proveedor '+vendor,f);datos.proveedor={Bloqueado:f['Bloqueado'],'Cód. forma pago':f['Cód. forma pago'],'Cód. divisa':f['Cód. divisa']};
+if(datos.proveedor.Bloqueado&&datos.proveedor.Bloqueado.trim())av.push(`Proveedor ${vendor} bloqueado (${datos.proveedor.Bloqueado})`);}
+if(location){const k=['Recepción requerida','Envío requerido','Requerir almacenamiento','Picking requerido','Ubicac. obligatoria','Ubic. y pick. dirigido'];const f=await L.readCard(5703,`'Code' IS '${location}'`,k);falta('almacén '+location,f);datos.almacen=Object.fromEntries(k.map(x=>[x,f[x]]));
+const a=datos.almacen;
+if(a['Envío requerido']||a['Recepción requerida'])av.push(`Almacén ${location}: exige ${[a['Recepción requerida']&&'recepción',a['Envío requerido']&&'envío'].filter(Boolean).join(' y ')} de almacén → en pedidos la cantidad a enviar/recibir queda a 0; registrar desde el documento de almacén. Hace falta ser empleado de almacén (7328)`);
+if(a['Picking requerido'])av.push(`Almacén ${location}: exige picking → registrar el picking antes del envío; lo recibido no está disponible para picking hasta registrar su ubicación`);
+if(a['Ubicac. obligatoria'])av.push(`Almacén ${location}: ubicación obligatoria → hay movimientos de almacén y hace falta código de ubicación`);}
+{const f=await L.readCard(461,'',['Evitar inventario negativo','Ajuste automático coste']);falta('config. inventario',f);datos.inventario={'Evitar inventario negativo':f['Evitar inventario negativo'],'Ajuste automático coste':f['Ajuste automático coste'],'Variación existencias automát.':f['Variación existencias automát.']};
+if(datos.inventario['Evitar inventario negativo']===false)av.push('Inventario negativo PERMITIDO → un envío sin reserva puede consumir stock reservado sin aviso (queda un negativo abierto)');
+if(datos.inventario['Ajuste automático coste']==='Siempre')av.push('Ajuste automático de coste = Siempre → el informe 795 no tendrá nada que ajustar');}
+{const f=await L.readCard(118,'',['Permitir registro desde','Permitir registro hasta']);falta('config. contabilidad',f);datos.contabilidad={'Permitir registro desde':f['Permitir registro desde'],'Permitir registro hasta':f['Permitir registro hasta']};
+if(datos.contabilidad['Permitir registro desde']||datos.contabilidad['Permitir registro hasta'])av.push(`Fechas de registro permitidas: ${datos.contabilidad['Permitir registro desde']||'…'} – ${datos.contabilidad['Permitir registro hasta']||'…'} (revisar también la configuración del usuario, 119)`);}
+return {avisos:av,datos};
+},
 title:()=>page.title(),
 };
 return L;

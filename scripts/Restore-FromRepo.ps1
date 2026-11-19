@@ -70,6 +70,11 @@ if (Test-Path $src) {
     Restore-File $src (Join-Path $BrowserDir 'start-bc-browser.ps1')
     New-Item -ItemType Directory -Force -Path (Join-Path $BrowserDir 'playwright-output') | Out-Null
 }
+$src = Join-Path $repo 'bc-browser\en-vivo-launcher.mjs'
+if (Test-Path $src) {
+    Restore-File $src (Join-Path $BrowserDir 'en-vivo-launcher.mjs')
+    Write-Host 'bc-en-vivo: para activarlo en ámbito de usuario, añadir mcpServers.bc-en-vivo en ~/.claude.json (ver skill bc-ui-testing) y crear bc-browser\en-vivo-workspace\.vscode\launch.json.'
+}
 
 if (-not $TenantId) { Write-Host 'AVISO: sin -TenantId; quedan marcadores {{BC_TENANT_ID}} por sustituir.' }
 Write-Host 'Restauracion completada. Siguientes pasos: ver README.md (plugin BCQuality y MCP de Playwright).'

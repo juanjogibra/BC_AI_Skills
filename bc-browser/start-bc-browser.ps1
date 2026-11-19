@@ -9,28 +9,33 @@ param(
     [int]$Port = 9222,
     [string]$Name = '',
     [switch]$Visible,
-    [switch]$Restart
+    [switch]$Restart,
+    [ValidateSet('chrome', 'edge')] [string]$Browser = 'chrome'   # Chrome por defecto (preferencia del usuario, 19/11/2026)
 )
 
 # -Name: navegador independiente por cliente/entorno (perfil 'profile-<Name>' con su propio login).
 #   Ej.: -Name cliente1 -Port 9223. Sin -Name: perfil 'profile' (puerto 9222 por defecto).
 #   Cada proyecto apunta a su puerto con un MCP 'playwright' en ambito local (~/.claude.json > projects).
-$profileDir = if ($Name) { Join-Path $PSScriptRoot "profile-$Name" } else { Join-Path $PSScriptRoot 'profile' }
+$base = if ($Name) { "profile-$Name" } else { 'profile' }
+if ($Browser -eq 'chrome') { $base += '-chrome' }   # Chrome no puede usar el perfil de Edge: perfil propio
+$profileDir = Join-Path $PSScriptRoot $base
 
 if ($Restart) {
-    # Solo cierra la instancia de ESTE perfil, no las de otros clientes
+    # Cierra la instancia de ESTE perfil y cualquier navegador de pruebas que ocupe el puerto (Edge o Chrome)
     $profilePattern = [regex]::Escape($profileDir) + '("|\s|$)'
-    Get-CimInstance Win32_Process -Filter "Name='msedge.exe'" |
-        Where-Object { $_.CommandLine -match $profilePattern } |
+    Get-CimInstance Win32_Process -Filter "Name='msedge.exe' OR Name='chrome.exe'" |
+        Where-Object { $_.CommandLine -match $profilePattern -or $_.CommandLine -match "--remote-debugging-port=$Port\b" } |
         ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
     Start-Sleep -Seconds 2
 }
 
-$edge = @(
-    "${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe",
-    "$env:ProgramFiles\Microsoft\Edge\Application\msedge.exe"
-) | Where-Object { Test-Path $_ } | Select-Object -First 1
-if (-not $edge) { throw 'No se encuentra msedge.exe' }
+$candidatos = if ($Browser -eq 'chrome') {
+    @("$env:ProgramFiles\Google\Chrome\Application\chrome.exe", "${env:ProgramFiles(x86)}\Google\Chrome\Application\chrome.exe", "$env:LOCALAPPDATA\Google\Chrome\Application\chrome.exe")
+} else {
+    @("${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe", "$env:ProgramFiles\Microsoft\Edge\Application\msedge.exe")
+}
+$edge = $candidatos | Where-Object { Test-Path $_ } | Select-Object -First 1
+if (-not $edge) { throw "No se encuentra el ejecutable de $Browser" }
 
 
 try {
@@ -51,5 +56,5 @@ try {
         Start-Sleep -Milliseconds 500
         try { $null = Invoke-RestMethod "http://127.0.0.1:$Port/json/version" -TimeoutSec 2; break } catch {}
     }
-    Write-Host "Edge arrancado con depuracion en el puerto $Port."
+    Write-Host "$Browser arrancado con depuracion en el puerto $Port (perfil $base)."
 }
