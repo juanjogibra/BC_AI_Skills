@@ -19,3 +19,7 @@
 | Entorno/permisos | Error de permisos, versión, licencia, extensión no instalada | Indicar requisito |
 
 5. Para un defecto de personalización: indicar objeto y procedimiento, causa probable y propuesta de corrección (si se va a corregir código AL, aplicar las skills BCQuality).
+
+## Avisos que parecen errores
+- "Sales Invoice/Order %1 already exists for this customer." (tabla Sales Header, `SalesAlreadyExistsTxt`) es una **notificación**, no un error: no detiene el proceso. Sale al validar Nº documento externo cuando ya hay otro documento del cliente con ese mismo número. En un proceso por lotes que crea facturas (p. ej. Combine Shipments con personalización), indica que se ha creado **otra** factura con el mismo Nº documento externo; no es la causa de que falten documentos.
+- Un proceso por lotes estándar que "se salta" documentos sin dar error: revisar PRIMERO los `where(... const ...)` del DataItemTableView del informe (p. ej. Combine Shipments exige "Combine Shipments" = Sí en el pedido, que se hereda del cliente de facturación cuando se crea el pedido). Comparar ese campo filtrando la lista por URL entre los documentos procesados y los no procesados.
