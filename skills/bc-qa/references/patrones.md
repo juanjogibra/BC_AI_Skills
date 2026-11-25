@@ -122,3 +122,13 @@ Word no agrupa, no ordena, no calcula ni ejecuta código: pinta el dataset en el
 - **BC elige el diseño ANTES de abrir la página de solicitud** (comprobado en la ronda 5). Una opción de la página de solicitud no puede cambiar el diseño, porque llega tarde: ni desde `OnQueryClosePage` ni desde `OnPreReport`. El campo "Diseño de informe" sale en solo lectura cuando se imprime desde el documento. Para elegir el diseño en cada impresión hay que usar una acción que llame a `ReportLayoutSelection.SetTempLayoutSelectedName(Nombre, AppId)` antes de `Report.RunModal` y lo limpie después (es el patrón de `Report Selections`; la plataforma consume la selección). El evento `ReportManagement.OnSelectReportLayoutCode` es interno y está anunciado que se quitará: no usarlo.
 - **Diseños de documento del cliente (9657)**: el diseño que se usa al imprimir es la columna "Diseño de anexo de correo electrónico" (campo "Email Attachment Layout Name" + AppID), no la del cuerpo. Al migrar selecciones por código: `Report ID` + `Report Layout Name`/`AppID` en Report Selections, y `Email Attachment Layout Name`/`AppID` en Custom Report Selection.
 - **Instalación que deja la extensión lista**: crear solo lo que falte (por ejemplo, la Selección de informes de un uso vacío) y nunca modificar lo existente. Las decisiones de negocio (qué clientes reciben qué documento) no se automatizan.
+- **Caso de prueba "importes complejos" para cualquier documento valorado o informe con importes** (ronda 7, 25/11/2026, cuadró al céntimo). Un solo pedido con:
+  - descuento de factura del cliente (Cód. dto. factura, importe mínimo 0, 5 %);
+  - descuentos de línea del 10 %, del 12,5 % y del 100 %;
+  - una línea con "Permitir dto. factura" = No (portes, cuenta contable);
+  - 3 tipos de IVA, cambiando el Gr. registro IVA prod. en la línea (en CRONUS ES el del 10 % es **VAT7**);
+  - precio con 3 decimales, línea gratuita y comentario;
+  - envío parcial en 2 albaranes y factura final.
+  Oráculos: Estadísticas pestaña Envío antes de cada registro, importes de línea calculados a mano, y suma de albaranes = factura por tipo de IVA (base y cuota). Las Estadísticas del pedido no tienen líneas de IVA por tipo; el desglose se compara con las Estadísticas de la factura registrada. Repetir aparte con precios IVA incluido.
+- **ES: `VAT Amount Line.VATAmountText()` devuelve "Importe IVA+RE" en cuanto hay más de un tipo de IVA**, aunque no haya RE. En informes propios, rotular según `TotalECAmount <> 0`.
+- **Rótulo de importe con precios IVA incluido**: `FieldCaption("Line Amount")` sobre una Sales Line temporal sin cabecera siempre da "excl. IVA", porque el CaptionClass busca la cabecera. El rótulo hay que decidirlo con "Prices Including VAT" del documento.
