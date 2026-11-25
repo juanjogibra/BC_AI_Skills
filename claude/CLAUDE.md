@@ -24,6 +24,10 @@ En cualquier tarea relacionada con Business Central / AL (programación, extensi
    - `ToolTip = 'Specifies the customer number.', Comment = 'ESP="Especifica el número de cliente."';`
    - `ErrorMsg: Label 'Document %1 not found.', Comment = 'ESP="No se encontró el documento %1."';` (mantener los placeholders `%1`, `%2`… en la traducción)
    Nunca dejar un texto traducible sin su `Comment = 'ESP="..."'` ni escribir el texto base en español.
+3. **Al generar un .app nuevo, borrar los .app de versiones anteriores** de la carpeta del proyecto, salvo el que esté usando en ese momento una prueba en curso; ese se borra cuando termine.
+
+## Herramientas del equipo
+- Si una herramienta que falta (Python, LibreOffice, Poppler, etc.) ahorra tiempo o tokens, se instala con `winget ... --scope user` en lugar de repetir rodeos. Python 3.12 está instalado en `%LOCALAPPDATA%\Programs\Python\Python312\python.exe` (25/11/2026).
 
 ## Pruebas funcionales en BC: skill `bc-ui-testing` y aprendizaje continuo (obligatorio)
 - Para cualquier prueba en la interfaz web de Business Central (abrir páginas, crear/modificar/lanzar/registrar documentos, reproducir flujos, comprobar desarrollos), usar la skill de usuario `bc-ui-testing` (`{{USERPROFILE}}\.claude\skills\bc-ui-testing\SKILL.md`) para la mecánica, `bc-qa` para el criterio (qué probar y cómo verificarlo) y `bc-speed` para hacerlo rápido y con pocos tokens sin perder calidad (solapar esperas con el paso siguiente, sondear, agrupar, verificar por API). Las mejoras de velocidad comprobadas se anotan en `bc-speed`.

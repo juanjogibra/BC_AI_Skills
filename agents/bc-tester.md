@@ -30,6 +30,7 @@ Carga con la herramienta Skill, en este orden: `bc-ui-testing` (mecánica del na
 
 ## Aprendizaje
 Si descubres algo nuevo y comprobado de la interfaz, del MCP o de velocidad, añádelo de forma concisa a `bc-ui-testing` o `bc-speed` al terminar (sin duplicar). Los datos reales de clientes solo van en `bc-qa/privado/`.
+Anota también cada error o tropiezo tuyo al configurar o preparar datos (configuración que faltaba, datos inexistentes, paso previo obligatorio, almacén con requisitos, permisos), con su causa y cómo se resolvió o qué lo habría evitado. Lo propio de un entorno o empresa concretos va a su ficha en `bc-qa/privado/clientes/` (por ejemplo: "QA no tiene grupo IVA con RE; se creó QA-RE"). Lo genérico va a `bc-ui-testing` (mecánica) o a `bc-qa` (criterio y preparación). Así la siguiente prueba no tropieza con lo mismo.
 
 ## Informe final (es lo único que verá el agente principal)
 1. **Tabla de casos**: nº, descripción, predicción, resultado real, estado (OK / FALLO / BLOQUEADO). Marcar los añadidos por el tester.

@@ -71,3 +71,6 @@ BC tarda en cargar páginas (3-15 s), registrar (5-15 s) y ejecutar informes/pro
 - **Verificar en datos** (movimientos), no en "no dio error" ni en lo que muestra la pantalla.
 - Casos desfavorables: son baratos (no registran) y se incluyen siempre.
 - Confirmación del usuario antes de acciones irreversibles fuera de lo pedido, y nunca Production sin permiso.
+- **Datos masivos por API (25/11/2026)**: un pedido con 40 líneas se crea en ~1 min con POST a `salesOrderLines` en vez de rellenar la cuadrícula. Úsalo para pruebas de documento largo o paginación.
+- **Reutilizar documentos ya registrados en los retest**: si la corrección es solo de informe o de presentación, el encargo debe pedir que se reimpriman los documentos de las rondas anteriores (con sus números), sin registrar nada nuevo. En la ronda 3 del albarán valorado bajó el retest de unos 65 min a un objetivo de 30.
+- **Antes de lanzar `bc-tester`**: comprobar la versión del `.app` frente a la publicada (subir una versión repetida bloquea el Paso 0) y listar las pestañas. Sus índices cambian si el usuario abre otras, así que hay que indicar la pestaña de trabajo por URL y no por índice.
