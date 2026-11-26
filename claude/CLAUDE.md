@@ -24,7 +24,9 @@ En cualquier tarea relacionada con Business Central / AL (programación, extensi
    - `ToolTip = 'Specifies the customer number.', Comment = 'ESP="Especifica el número de cliente."';`
    - `ErrorMsg: Label 'Document %1 not found.', Comment = 'ESP="No se encontró el documento %1."';` (mantener los placeholders `%1`, `%2`… en la traducción)
    Nunca dejar un texto traducible sin su `Comment = 'ESP="..."'` ni escribir el texto base en español.
+   Los ficheros de traducción los genera ClipDynamics con el comando **"AL: Generate Xliff files (AL Tools)"** (`Translations/<app>.es-ES.g.xlf`). Si los genero yo, deben tener **exactamente su formato**: después de compilar, `node %USERPROFILE%\.claude\scripts\gen-clipdynamics.js "<raíz del proyecto>" ESP=es-ES` (reutiliza la librería `xml2js` y la lógica de `out/XliffFileMgt.js` de la extensión) y volver a compilar. Nunca un segundo fichero para el mismo idioma (error AL1084).
 3. **Al generar un .app nuevo, borrar los .app de versiones anteriores** de la carpeta del proyecto, salvo el que esté usando en ese momento una prueba en curso; ese se borra cuando termine.
+4. **Permissionset con el formato del comando "AL: Generate permission set as AL object containing current extension objects"**: `using` del namespace de la extensión, `Permissions =` en la línea siguiente al `Caption` (sin línea en blanco), cada objeto en su línea sangrada 8 espacios, e incluyendo **todos** los objetos de la extensión (también los codeunits de instalación y actualización). Al añadir o quitar objetos, mantener ese formato.
 
 ## Herramientas del equipo
 - Si una herramienta que falta (Python, LibreOffice, Poppler, etc.) ahorra tiempo o tokens, se instala con `winget ... --scope user` en lugar de repetir rodeos. Python 3.12 está instalado en `%LOCALAPPDATA%\Programs\Python\Python312\python.exe` (25/11/2026).
