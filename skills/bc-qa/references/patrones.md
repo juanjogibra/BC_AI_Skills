@@ -99,6 +99,18 @@ Revisarlos al leer el código (antes de ejecutar nada): detectarlos leyendo cues
 - Heredado que el compilador NO avisa y conviene migrar igualmente: `RDLCLayout`/`WordLayout`/`DefaultLayout` → sección `rendering` + `DefaultRenderingLayout` (comprobar después en Diseños de informe que la selección de diseño sigue bien; con el compilador AL 30 la sección `rendering` va después de `requestpage` y antes de `labels`, si no AL0926; añadir `Summary` a cada layout); `extensionsPermissionSet.xml` → objeto `permissionset` (el analizador lo marca como PTE0014; mantener el mismo Role ID si hay usuarios asignados, o avisar de que hay que reasignar; el nombre AL admite 20 caracteres (AL0305) y `Access Control."Role ID"` es Code[20]: si el RoleID del XML era más largo, BC lo instaló truncado a 20 y ese truncado es el nombre que hay que usar, confirmándolo en la página Conjuntos de permisos); variables `File` (solo on-prem).
 - **Antes de migrar, `git fetch` y comparar con `origin/main`**: puede haber una migración intermedia hecha por otra persona sin bajar (otra versión, lógica nueva). Si hay merge: quedarse con su lógica funcional y con nuestro `app.json`/`rendering`, recompilar contra la versión destino (pueden aparecer extensiones sobre tablas `Removed`, AL0520) y regenerar el `.app` con el código fusionado. Si el XML de permisos sale como "deleted by us", el merge lo devuelve al disco y se cuela en el `.app` (AL1026): `git rm -f` antes de compilar.
 - Retiradas de plataforma a revisar aparte: v29 SOAP sobre páginas Microsoft, v30 OData sobre páginas Microsoft (buscar `TenantWebService` / XML de webservices con IDs < 50000).
+- **Las publicaciones manuales no están en el código, solo en cada entorno.** Para inventariarlas (comprobado en los símbolos de la v29, 27/11/2026):
+  - leer `Tenant Web Service` (System.Integration). La tabla `Web Service` es `Scope = OnPrem` y no se puede usar en Cloud;
+  - cruzar con `AllObjWithCaption."App ID"` → `NAV App Installed App.Publisher` para saber si el objeto es de Microsoft;
+  - los objetos 2000000000+ no tienen App ID: son de la plataforma, también de Microsoft.
+- La v30 también retira la **Finance reports API (beta)**. La sustituta, `microsoft/analytics/v1.0`, viene preinstalada con los conectores de Power BI, pero no sirve de OData genérico:
+  - no tiene movimientos de contabilidad sin partir;
+  - no tiene dimensiones globales ni valores de dimensión;
+  - casi no trae id ni `systemModifiedAt`;
+  - no tiene registrados, bancos ni esquemas;
+  - los recortan los filtros de fecha de *Power BI Connector Setup* (página 36951).
+  
+  Antes de proponer una API propia, contrastar los campos de su entidad en Learn (`api-analytics/resources/dynamics_<entidad>`).
 
 ## E. Pasar un RDLC a Word (comprobar ANTES de diseñar o probar; validado 25/11/2026)
 Word no agrupa, no ordena, no calcula ni ejecuta código: pinta el dataset en el orden en que AL lo emite. Grep en el .rdl: `<Group Name` con `<GroupExpression>` distinto de la clave del dataitem, `<SortExpression>`, `<PageBreak>` por grupo, `Code.` (p. ej. `SetData/GetData` para la cabecera), `IIf(`/`Sum(`/`First(`, `User!`, `<Format>` con `;''`. Si aparece alguno, el Word NO sale igual con el mismo dataset: hay que hacer un report nuevo.
