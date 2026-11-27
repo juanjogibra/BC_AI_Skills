@@ -14,6 +14,7 @@ BC tarda en cargar páginas (3-15 s), registrar (5-15 s) y ejecutar informes/pro
 - **Procesos largos en segundo plano** (`run_in_background`): consultas API grandes, extracciones de código (`Expand-ALSource`), descargas de símbolos, generación de informes. Mientras corren, seguir con la interfaz o preparar el informe de resultados.
 - **Dentro de un `run_code`**: lanzar la acción y, mientras BC procesa, ir sondeando su estado y recogiendo lo que ya está disponible (título, notificaciones, diálogos) en lugar de esperar a ciegas.
 - **Despliegues en varios entornos (consejo del usuario, 26/11/2026)**: tras pulsar "Implementar" en un entorno (2508 "En curso"), pasar al siguiente y lanzar su subida, rotando por todos los entornos que haya. Después sondear la 2508 de cada uno y despublicar o verificar solo los que estén en "Completado". Nunca uno detrás de otro esperando.
+  - Cada entorno en su propio `run_code` (un bucle con varios `goto` se corta por `beforeunload`); un `run_code` que empieza con `goto` devuelve "Modal state": separar la navegación de la lectura y releer en otra llamada (comprobado 27/11/2026).
 - **Pensar mientras carga**: decidir la verificación esperada (movimientos, importes) antes de que termine el registro, para comparar al instante.
 
 ## 2. Sondear, no esperar fijo
